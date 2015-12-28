@@ -316,8 +316,8 @@ def start_session():
         logger.error("failed now, at %s" % str(datetime.now()))
         logger.exception(e)
         driver.save_screenshot("screens/%s.png" % str(datetime.now()))
-        #driver.quit()
+        driver.quit()
 
 if __name__ == "__main__":
-    #while True:
-    start_session()
+    while True:
+        start_session()
