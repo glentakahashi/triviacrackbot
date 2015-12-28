@@ -195,7 +195,7 @@ def take_turn(driver):
                 logger.info("Won or lost the tiebreaker")
         return
     if not has_crown(driver, 3):
-        logger.info("Clicking crown")
+        logger.info("Spinning")
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CLASS_NAME, "spin"))
         )
@@ -204,6 +204,7 @@ def take_turn(driver):
         spin_btn.click()
     category = None
     if has_crown(driver):
+        logger.info("Clicking crown")
         crown_btn = driver.find_element_by_css_selector(".choose-crown")
         crown_btn.click()
         WebDriverWait(driver, 10).until(
@@ -216,6 +217,7 @@ def take_turn(driver):
         cat_btn.click()
         play_btn = driver.find_element_by_css_selector(".btn-play")
     else:
+        logger.info("Clicking play")
         # click play
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "play-category"))
@@ -239,6 +241,7 @@ def take_turn(driver):
             )
             close_btn = driver.find_element_by_css_selector(".modal-close")
             close_btn.click()
+            logger.info("closing ad/popup/etc.")
             logger.info("failed a question i think")
             if fail:
                 logger.info("failed on purpose though")
