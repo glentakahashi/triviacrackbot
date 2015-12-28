@@ -107,6 +107,9 @@ def get_answer(driver, category, spintype='CROWN'):
         else:
             q = questions[0]['question']
     logger.info(q)
+    if random.random() > 0.87734:
+        logger.info("Guessing on the answer")
+        return random.randint(0, 3)
     return q['correct_answer']
 
 def has_crown(driver, t=10):
@@ -149,8 +152,9 @@ def answer_question(driver, answer):
     )
     time.sleep(random.triangular(2, 14, 5))
     answer_btn = driver.find_element_by_css_selector(".btn-answer:nth-child(%s)" % str(answer))
-    logger.info("Answering %s " % answer_btn.text)
+    logger.info("Answering %s" % answer_btn.text)
     answer_btn.click()
+    driver.save_screenshot("screens/question %s.png" % str(datetime.now()))
     # click continue if you succeed/fail
     WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.CLASS_NAME, "btn-continue"))
@@ -166,11 +170,7 @@ def take_turn(driver):
         accept_btn.click()
         categories = ['history', 'geography', 'arts', 'sports', 'entertainment', 'science']
         for category in categories:
-            if random.random() < 0.84734:
-                answer = int(get_answer(driver, category, 'DUEL'))+1
-            else:
-                logger.info("Guessing on the answer")
-                answer = random.randint(1, 4)
+            answer = int(get_answer(driver, category, 'DUEL'))+1
             answer_question(driver, answer)
         try:
             # close the ad
@@ -193,6 +193,15 @@ def take_turn(driver):
                 answer_question(driver, answer)
             else:
                 logger.info("Won or lost the tiebreaker")
+            # try closing a modal, say if we levelled up or something
+            try:
+                WebDriverWait(driver, 3).until(
+                    EC.element_to_be_clickable((By.CLASS_NAME, "modal-close"))
+                )
+                close_btn = driver.find_element_by_css_selector(".modal-close")
+                close_btn.click()
+            except:
+                pass
         return
     if not has_crown(driver, 3):
         logger.info("Spinning")
@@ -224,13 +233,7 @@ def take_turn(driver):
         )
         play_btn = driver.find_element_by_css_selector(".play-category")
     logger.info("Our category is %s " % category)
-    fail = False
-    if random.random() < 0.84734:
-        answer = int(get_answer(driver, category))+1
-    else:
-        fail = True
-        logger.info("Guessing on the answer")
-        answer = random.randint(1, 4)
+    answer = int(get_answer(driver, category))+1
     play_btn.click()
     answer_question(driver, answer)
     if not has_crown(driver, 3):
@@ -243,16 +246,14 @@ def take_turn(driver):
             close_btn.click()
             logger.info("closing ad/popup/etc.")
             logger.info("failed a question i think")
-            if fail:
-                logger.info("failed on purpose though")
-            else:
-                logger.info("fail on accident??????")
         except:
             logger.info("had no ad")
             pass
     if has_ok(driver):
         accept_btn = driver.find_element_by_css_selector(".btn-ok")
         accept_btn.click()
+
+# TODO: move close modal to a function
 
 def run(driver):
     # try closing a modal, say if we levelled up or something
@@ -279,10 +280,9 @@ def run(driver):
                 prize.click()
         num_lives = driver.find_element_by_css_selector('.quantity').text
         if num_lives != '0':
-            logger.info("have %d lives so starting new game" % num_lives)
+            logger.info("have %s lives so starting new game" % num_lives)
             start_new_game(driver)
         else:
-            # if no games, sleep 5 minutes
             if has_games(driver):
                 logger.info("Clicking first game")
                 first_game = driver.find_element_by_css_selector(".your-move-container > .panel > .list-group > div:nth-child(1)")
@@ -290,11 +290,14 @@ def run(driver):
             else:
                 logger.info("Waiting for 5 minutes")
                 time.sleep(300)
+                logger.info("refreshing the page")
+                driver.refresh()
         time.sleep(random.triangular(1, 9, 3))
 
 def start_session():
     # driver = webdriver.PhantomJS()  # or add to your PATH
     driver = webdriver.Firefox()  # or add to your PATH
+    driver.maximize_window()
     # driver.set_window_size(1024, 768)  # optional
     driver.get('https://facebook.com/')
     driver.delete_all_cookies()
@@ -308,7 +311,6 @@ def start_session():
     WebDriverWait(driver, 30).until(
         EC.element_to_be_clickable((By.CLASS_NAME, "btn-new-game"))
     )
-    driver.maximize_window()
     try:
         while True:
             run(driver)
