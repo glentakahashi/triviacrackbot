@@ -253,6 +253,9 @@ def take_turn(driver):
         answer_question(driver, None, 'NORMAL', playbutton)
     else:
         logger.error("Couldn't find play button")
+    if has_crown(driver):
+        take_crown_turn(driver)
+        return
     close_or_ok_modal(driver)
 
 def run(driver):
