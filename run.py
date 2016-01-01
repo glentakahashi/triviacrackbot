@@ -131,19 +131,15 @@ def get_answer(driver, category, spintype):
     return int(q['correct_answer']) + 1
 
 def has_crown(driver):
-    logger.info("Checking for crown")
     return has_clickable(driver, ".choose-crown", 5)
 
 def has_ok(driver):
-    logger.info("Checking for OK")
-    return has_clickable(driver, ".btn-ok")
+    return has_clickable(driver, ".btn-ok", 5)
 
 def has_games(driver):
-    logger.info("Checking for games")
     return has_clickable(driver, ".your-move-container > .panel > .list-group > div")
 
 def has_answer(driver):
-    logger.info("Checking for answer")
     return has_clickable(driver, ".btn-answer", 5)
 
 def has_element(driver, selector, t=10):
@@ -153,7 +149,9 @@ def has_element(driver, selector, t=10):
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
     except Exception:
+        logger.info("Didn't find %s" % selector)
         return False
+    logger.info("Found %s" % selector)
     return True
 
 def has_clickable(driver, selector, t=10):
@@ -163,7 +161,9 @@ def has_clickable(driver, selector, t=10):
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
     except Exception:
+        logger.info("Didn't find clickable %s" % selector)
         return False
+    logger.info("Found clickable %s" % selector)
     return True
 
 def answer_question(driver, category, spintype, playbutton=None):
@@ -187,7 +187,7 @@ def answer_question(driver, category, spintype, playbutton=None):
 
 def close_or_ok_modal(driver):
     if has_element(driver, ".modal", 5):
-        if has_clickable(driver, ".modal-close"):
+        if has_clickable(driver, ".modal-close", 5):
             logger.info("Clicking modal close")
             click(driver, '.modal-close')
         elif has_ok(driver):
