@@ -45,7 +45,7 @@ def load_cookies(driver, filename, domains):
                 driver.add_cookie(cookie)
 
 def click(driver, selector):
-    WebDriverWait(driver, 5).until(
+    WebDriverWait(driver, 3).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
     )
     element = driver.find_element_by_css_selector(selector)
@@ -61,13 +61,13 @@ def start_new_game(driver):
     if has_clickable(driver, ".btn-new-game"):
         click(driver, '.btn-new-game')
     else:
-        logger.error("Couldn't find new game button")
+        raise Exception("Couldn't find new game button")
     if has_clickable(driver, ".btn-play-now"):
         click(driver, '.btn-classic')
         click(driver, '.opponent-type > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > label:nth-child(1) > button:nth-child(2)')
         click(driver, '.btn-play-now')
     else:
-        logger.error("Couldn't find a play now button")
+        raise Exception("Couldn't find a play now button")
 
 def get_answer(driver, category, spintype):
     game_id = driver.current_url.split("#game/")[1]
@@ -105,19 +105,19 @@ def get_answer(driver, category, spintype):
     data = driver.execute_script(script)
     spins = json.loads(data)['spins_data']['spins']
     questions = spins[0]['questions']
-    logger.info("Looking for spintype %s" % spintype)
+    logger.debug("Looking for spintype %s" % spintype)
     for spin in spins:
-        logger.info("Found spintype %s" % spin['type'])
+        logger.debug("Found spintype %s" % spin['type'])
         if spin['type'].lower() == spintype.lower():
             questions = spin['questions']
-            logger.info("Found correct spin: %s" % questions)
+            logger.debug("Found correct spin: %s" % questions)
     if category and category != 'last':
-        logger.info("Searching for category %s in questions" % category)
+        logger.debug("Searching for category %s in questions" % category)
         for question in questions:
-            logger.info("Found question category %s" % question['question']['category'].lower())
+            logger.debug("Found question category %s" % question['question']['category'].lower())
             if question['question']['category'].lower() == category:
                 q = question['question']
-                logger.info("Found correct question: %s" % q)
+                logger.debug("Found correct question: %s" % q)
     else:
         if category == 'last':
             q = questions[-1]['question']
@@ -125,53 +125,52 @@ def get_answer(driver, category, spintype):
         else:
             q = questions[0]['question']
             logger.info("Returning first question of spin: %s" % q)
-    if random.random() > 0.87734:
+    if random.random() > 0.85734:
         logger.info("Choosing a random answer instead")
         return random.randint(1, 4)
     return int(q['correct_answer']) + 1
 
-def has_crown(driver):
-    return has_clickable(driver, ".choose-crown", 5)
+def has_crown(driver, t=5):
+    return has_clickable(driver, ".choose-crown", t)
 
 def has_ok(driver):
-    return has_clickable(driver, ".btn-ok", 5)
+    return has_clickable(driver, ".btn-ok", 3)
 
 def has_games(driver):
     return has_clickable(driver, ".your-move-container > .panel > .list-group > div")
 
 def has_answer(driver):
-    return has_clickable(driver, ".btn-answer", 5)
+    return has_clickable(driver, ".btn-answer", 3)
 
 def has_element(driver, selector, t=10):
-    logger.info("Checking for %s" % selector)
+    logger.debug("Checking for %s" % selector)
     try:
         WebDriverWait(driver, t).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
     except Exception:
-        logger.info("Didn't find %s" % selector)
+        logger.debug("Didn't find %s" % selector)
         return False
-    logger.info("Found %s" % selector)
+    logger.debug("Found %s" % selector)
     return True
 
 def has_clickable(driver, selector, t=10):
-    logger.info("Checking for clickable %s" % selector)
+    logger.debug("Checking for clickable %s" % selector)
     try:
         WebDriverWait(driver, t).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
         )
     except Exception:
-        logger.info("Didn't find clickable %s" % selector)
+        logger.debug("Didn't find clickable %s" % selector)
         return False
-    logger.info("Found clickable %s" % selector)
+    logger.debug("Found clickable %s" % selector)
     return True
 
 def answer_question(driver, category, spintype, playbutton=None):
     if playbutton:
         click_element(driver, playbutton)
     if not has_answer(driver):
-        logger.error("No question found")
-        return
+        raise Exception("No question found")
     answer = get_answer(driver, category, spintype)
     time.sleep(random.triangular(2, 14, 5))
     answer_btn = driver.find_element_by_css_selector(".btn-answer:nth-child(%s)" % str(answer))
@@ -180,18 +179,18 @@ def answer_question(driver, category, spintype, playbutton=None):
     driver.save_screenshot("screens/question %s.png" % str(datetime.now()))
     # click continue if you succeed/fail
     if has_clickable(driver, '.btn-continue'):
-        logger.info("Clicking continue")
+        logger.debug("Clicking continue")
         click(driver, '.btn-continue')
     else:
-        logger.error("Couldn't find continue button")
+        raise Exception("Couldn't find continue button")
 
 def close_or_ok_modal(driver):
-    if has_element(driver, ".modal", 5):
-        if has_clickable(driver, ".modal-close", 5):
-            logger.info("Clicking modal close")
+    if has_element(driver, ".modal", 3):
+        if has_clickable(driver, ".modal-close", 3):
+            logger.debug("Clicking modal close")
             click(driver, '.modal-close')
         elif has_ok(driver):
-            logger.info("Clicking modal OK")
+            logger.debug("Clicking modal OK")
             click(driver, '.btn-ok')
         else:
             driver.save_screenshot("screens/modal %s.png" % str(datetime.now()))
@@ -228,7 +227,7 @@ def take_crown_turn(driver):
         playbutton = driver.find_element_by_css_selector(".btn-play")
         answer_question(driver, category, 'CROWN', playbutton)
     else:
-        logger.error("Couldn't find the crown select menu after clicking crown")
+        raise Exception("Couldn't find the crown select menu after clicking crown")
     close_or_ok_modal(driver)
 
 def take_turn(driver):
@@ -243,8 +242,8 @@ def take_turn(driver):
         logger.info("Spinning")
         click(driver, '.spin')
     else:
-        logger.error("Expected to find spin button but didn't")
-    if has_crown(driver):
+        raise Exception("Expected to find spin button but didn't")
+    if has_crown(driver, 10):
         take_crown_turn(driver)
         return
     if has_clickable(driver, '.play-category'):
@@ -252,7 +251,7 @@ def take_turn(driver):
         playbutton = driver.find_element_by_css_selector(".play-category")
         answer_question(driver, None, 'NORMAL', playbutton)
     else:
-        logger.error("Couldn't find play button")
+        raise Exception("Couldn't find play button")
     if has_crown(driver):
         take_crown_turn(driver)
         return
@@ -265,6 +264,7 @@ def run(driver):
     if "#game" in driver.current_url:
         take_turn(driver)
     elif "#dashboard" in driver.current_url:
+        # TODO: hearts are more valuable than anything else, move everything to hearts, and only collect if you have room in your lives
         for i in range(1, 4):
             logger.info("Checking prize %d" % i)
             if has_clickable(driver, 'div.gacha-card:nth-child(%d)' % i):
@@ -289,8 +289,7 @@ def run(driver):
                 logger.info("Refreshing the page")
                 driver.refresh()
     else:
-        logger.error("Got to page we don't recognize: %s" % driver.current_url)
-        raise Exception("Unknown page %s" % driver.current_url)
+        raise Exception("Got to page we don't recognize: %s" % driver.current_url)
     time.sleep(random.triangular(1, 9, 3))
 
 def start_session():
@@ -315,7 +314,7 @@ def start_session():
         logger.info("Clicking facebook login button")
         click(driver, '.btn-fb')
     else:
-        logger.error("Could not find facebook login button")
+        raise Exception("Could not find facebook login button")
     close_or_ok_modal(driver)
     if has_clickable(driver, '.btn-new-game', 30):
         try:
