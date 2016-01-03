@@ -122,12 +122,12 @@ def get_answer(driver, category, spintype):
     else:
         if category == 'last':
             q = questions[-1]['question']
-            logger.info("Returning last question of spin, likely a tiebreaker: %s" % q)
+            logger.debug("Returning last question of spin, likely a tiebreaker: %s" % q)
         else:
             q = questions[0]['question']
-            logger.info("Returning first question of spin: %s" % q)
+            logger.debug("Returning first question of spin: %s" % q)
     if random.random() > 0.85734:
-        logger.info("Choosing a random answer instead")
+        logger.info("Choosing a random answer instead of correct answer")
         return random.randint(1, 4)
     return int(q['correct_answer']) + 1
 
@@ -277,11 +277,11 @@ def collect_prizes(driver, num_lives):
 
 def run(driver):
     logger.info("Running")
-    # try closing a modal, say if we levelled up or something
-    close_or_ok_modal(driver)
     if "#game" in driver.current_url:
         take_turn(driver)
     elif "#dashboard" in driver.current_url:
+        # try closing a modal, say if we levelled up or something
+        close_or_ok_modal(driver)
         num_lives = driver.find_element_by_css_selector('.quantity').text
         collect_prizes(driver, num_lives)
         if num_lives != '0' and has_clickable(driver, '.btn-new-game'):
