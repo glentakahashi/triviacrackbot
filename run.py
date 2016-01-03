@@ -59,6 +59,7 @@ def click_element(driver, element):
 
 def start_new_game(driver):
     if has_clickable(driver, ".btn-new-game"):
+        logger.info("Clicking new game")
         click(driver, '.btn-new-game')
     else:
         raise Exception("Couldn't find new game button")
@@ -185,7 +186,7 @@ def answer_question(driver, category, spintype, playbutton=None):
         raise Exception("Couldn't find continue button")
 
 def close_or_ok_modal(driver):
-    if has_element(driver, ".modal", 3):
+    if has_element(driver, ".modal"):
         if has_clickable(driver, ".modal-close", 3):
             logger.debug("Clicking modal close")
             click(driver, '.modal-close')
@@ -257,6 +258,23 @@ def take_turn(driver):
         return
     close_or_ok_modal(driver)
 
+def collect_prizes(driver, num_lives):
+    for i in range(1, 4):
+        logger.info("Checking prize %d" % i)
+        if has_clickable(driver, 'div.gacha-card:nth-child(%d)' % i):
+            prize = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d)' % i)
+            prize_text = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d) > div:nth-child(3) > p:nth-child(1) > span:nth-child(2)' % i).text
+            if prize_text.lower() == 'collect':
+                prize_icon = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d) > div:nth-child(1) > div.icon' % i)
+                # check if we have hearts
+                if "lives" in prize_icon.get_attribute("class") and num_lives != '0':
+                    logger.info("Skipping clicking prize because it is extra hearts and we are not empty on hearts")
+                    continue
+                logger.info("Collecting prize %d" % i)
+                click_element(driver, prize)
+        else:
+            logger.error("Couldn't find gacha card %d" % i)
+
 def run(driver):
     logger.info("Running")
     # try closing a modal, say if we levelled up or something
@@ -264,18 +282,8 @@ def run(driver):
     if "#game" in driver.current_url:
         take_turn(driver)
     elif "#dashboard" in driver.current_url:
-        # TODO: hearts are more valuable than anything else, move everything to hearts, and only collect if you have room in your lives
-        for i in range(1, 4):
-            logger.info("Checking prize %d" % i)
-            if has_clickable(driver, 'div.gacha-card:nth-child(%d)' % i):
-                prize = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d)' % i)
-                prize_text = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d) > div:nth-child(3) > p:nth-child(1) > span:nth-child(2)' % i).text
-                if prize_text.lower() == 'collect':
-                    logger.info("Collecting prize %d" % i)
-                    click_element(driver, prize)
-            else:
-                logger.error("Couldn't find gacha card %d" % i)
         num_lives = driver.find_element_by_css_selector('.quantity').text
+        collect_prizes(driver, num_lives)
         if num_lives != '0' and has_clickable(driver, '.btn-new-game'):
             logger.info("have %s lives so starting new game" % num_lives)
             start_new_game(driver)
@@ -294,7 +302,6 @@ def run(driver):
 
 def start_session():
     logger.info("Starting a new session")
-    #driver = webdriver.PhantomJS()
     driver = webdriver.Firefox()
     driver.maximize_window()
     logger.info("Loading facebook")
