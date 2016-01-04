@@ -259,6 +259,10 @@ def take_turn(driver):
     close_or_ok_modal(driver)
 
 def collect_prizes(driver, num_lives):
+    if has_clickable(driver, '.btn-omit'):
+        logger.info("Skipping gacha tutorial")
+        click(driver, '.btn-omit')
+    collected_lives = False
     for i in range(1, 4):
         logger.info("Checking prize %d" % i)
         if has_clickable(driver, 'div.gacha-card:nth-child(%d)' % i):
@@ -267,9 +271,11 @@ def collect_prizes(driver, num_lives):
             if prize_text.lower() == 'collect':
                 prize_icon = driver.find_element_by_css_selector('div.gacha-card:nth-child(%d) > div:nth-child(1) > div.icon' % i)
                 # check if we have hearts
-                if "lives" in prize_icon.get_attribute("class") and num_lives != '0':
+                if collected_lives or "lives" in prize_icon.get_attribute("class") and num_lives != '0':
                     logger.info("Skipping clicking prize because it is extra hearts and we are not empty on hearts")
                     continue
+                if "lives" in prize_icon.get_attribute("class"):
+                    collected_lives = True
                 logger.info("Collecting prize %d" % i)
                 click_element(driver, prize)
         else:
