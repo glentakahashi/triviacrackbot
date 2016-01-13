@@ -23,6 +23,8 @@ handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 handler.setFormatter(formatter)
 
+WIN_PCT = 0.87654321
+
 # add the handlers to the logger
 
 logger.addHandler(handler)
@@ -126,7 +128,7 @@ def get_answer(driver, category, spintype):
         else:
             q = questions[0]['question']
             logger.debug("Returning first question of spin: %s" % q)
-    if random.random() > 0.85734:
+    if random.random() > WIN_PCT:
         logger.info("Choosing a random answer instead of correct answer")
         return random.randint(1, 4)
     return int(q['correct_answer']) + 1
